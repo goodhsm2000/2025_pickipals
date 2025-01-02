@@ -1,9 +1,0 @@
-<launch>
-    <!-- astra_twist_ppgi.py 노드 실행, 초기에는 IDLE 상태 -->
-    <node pkg="turtlebot_control" type="astra_twist_ppgi.py" name="astra_twist_ppgi" output="screen">
-        <param name="start" value="false"/> <!-- 초기에는 사용하지 않지만, 노드 내에서 IDLE 상태로 시작 -->
-    </node>
-
-    <!-- sound_detect.py (simple_predict.py) 노드 실행 -->
-    <node pkg="turtlebot_control" type="simple_predict.py" name="sound_detect" output="screen"/>
-</launch>
