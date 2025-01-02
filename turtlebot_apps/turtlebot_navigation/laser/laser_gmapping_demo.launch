@@ -1,0 +1,16 @@
+<launch>
+
+  <!-- Run self-filter -->
+  <node name="laser_filter"  pkg="turtlebot_navigation" type="laser_footprint_filter" />
+ 
+  <!--- Run gmapping -->
+  <!-- <include file="$(find turtlebot_navigation)/config/gmapping_turtlebot.launch" >
+    <arg name="scan_topic" value="scan_filtered" />
+  </include> -->
+  <arg name="custom_gmapping_launch_file" default="$(find turtlebot_navigation)/launch/includes/gmapping/gmapping.launch.xml"/>
+  <include file="$(arg custom_gmapping_launch_file)"/>
+
+  <!--- Run Move Base and Robot Pose EKF -->
+  <include file="$(find turtlebot_navigation)/launch/includes/ydlidar_move_base.launch.xml" />
+
+</launch>

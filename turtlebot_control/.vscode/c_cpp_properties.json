@@ -1,0 +1,31 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/turtle/catkin_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/turtle/catkin_ws/src/ros_astra_camera-0.3.0/include/**",
+        "/home/turtle/catkin_ws/src/kobuki_bumper2pc/include/**",
+        "/home/turtle/catkin_ws/src/kobuki_gazebo_plugins/include/**",
+        "/home/turtle/catkin_ws/src/kobuki_keyop/include/**",
+        "/home/turtle/catkin_ws/src/kobuki_node/include/**",
+        "/home/turtle/catkin_ws/src/kobuki_safety_controller/include/**",
+        "/home/turtle/catkin_ws/src/rviz_camera_stream-noetic-devel/include/**",
+        "/home/turtle/catkin_ws/src/turtlebot_apps/turtlebot_actions/include/**",
+        "/home/turtle/catkin_ws/src/yocs_cmd_vel_mux/include/**",
+        "/home/turtle/catkin_ws/src/yocs_controllers/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
