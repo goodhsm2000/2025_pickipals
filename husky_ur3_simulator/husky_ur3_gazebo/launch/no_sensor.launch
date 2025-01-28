@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- 센서 관련 인자들을 주석 처리하여 Gazebo 실행 시 센서 부하를 줄입니다. -->
+  <!-- <arg name="laser_enabled" default="true"/>
+  <arg name="camera_h_enabled" default="true"/> -->
+
+  <env name="GAZEBO_MODEL_PATH"
+       value="$(find ur_gripper_gazebo)/models:$(optenv GAZEBO_MODEL_PATH)" />
+       
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find husky_ur3_gazebo)/worlds/HRI_lab.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+  
+  <include file="$(find husky_ur3_gazebo)/launch/spawn_husky2.launch">
+    <!-- 센서 인자들을 주석 처리하여 로봇만 스폰합니다. -->
+    <!-- <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="camera_h_enabled" value="$(arg camera_h_enabled)"/> -->
+  </include>
+
+</launch>
