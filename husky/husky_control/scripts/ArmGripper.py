@@ -97,7 +97,7 @@ def gripper_close():
 
     rospy.loginfo("Closing gripper")
     pub.publish(msg)  # 메시지 발행
-    rospy.sleep(1)  # 명령이 실행될 시간을 대기
+    rospy.sleep(5)  # 명령이 실행될 시간을 대기
 
 def gripper_grasp():
     """그리퍼를 특정 위치로 닫는 함수 (grasping 동작)"""
@@ -113,7 +113,7 @@ def gripper_grasp():
 
     rospy.loginfo("Closing gripper")
     pub.publish(msg)  # 메시지 발행
-    rospy.sleep(1)  # 명령이 실행될 시간을 대기
+    rospy.sleep(5)  # 명령이 실행될 시간을 대기
 
 def move_ee(Px, Py, Pz, Rx, Ry, Rz, Rw):
     """
@@ -229,19 +229,19 @@ def set_updown_pose():
 def set_number_pose():
     """로봇을 숫자 자세로 이동시키는 함수"""
     rospy.loginfo("Moving to number pose...")
-    move_Joint(-1.590, -1.438, -0.916, -0.802, 1.590, 0)
+    move_Joint(1.570, -1.570, 0.0, -1.570, 0.0, 0.0)
     rospy.loginfo("Number pose reached.")    
 
 def way_point1():
     """바구니 이동 1"""
     rospy.loginfo("Moving to number pose...")
-    move_Joint(1.59, -2.861, 1.688, -1.840, -1.594, 3.143)
+    move_Joint(1.59, -2.861, 1.688, -1.840, -1.594, 3.14)
     rospy.loginfo("Number pose reached.") 
 
 def way_point2():
     """바구니 이동 2"""
     rospy.loginfo("Moving to number pose...")
-    move_Joint(0.045, -2.861, 2.097, -1.840, -1.594, 3.142)
+    move_Joint(0.045, -2.861, 2.097, -1.840, -1.594, 3.14)
     rospy.loginfo("Number pose reached.") 
 
 def set_origin_pose():
@@ -262,11 +262,11 @@ def move_to_above_object(x, y, z):
     # odom 좌표계를 기준으로 물체의 위치를 정의 (물체 위쪽으로 이동)
     # 지금은 base_link 좌표계를 기준으로 물체의 위치를 정의
     pose_stamped = PoseStamped()
-    pose_stamped.header.frame_id = 'ur3_base_link'
+    pose_stamped.header.frame_id = 'base_link'
     pose_stamped.header.stamp = rospy.Time.now()
     pose_stamped.pose.position.x = x 
     pose_stamped.pose.position.y = y
-    pose_stamped.pose.position.z = z + 0.2  # 물체 위쪽으로 0.2m 이동
+    pose_stamped.pose.position.z = z + 0.25  # 물체 위쪽으로 0.2m 이동
     pose_stamped.pose.orientation.x = 1
     pose_stamped.pose.orientation.y = 0
     pose_stamped.pose.orientation.z = 0
@@ -304,15 +304,14 @@ def move_to_front_object(x, y, z):
     # odom 좌표계를 기준으로 물체의 앞쪽으로 이동 (X축 -0.2m)
     # 지금은 base_link 기준 좌표로 이동
     pose_stamped = PoseStamped()
-    pose_stamped.header.frame_id = 'ur3_base_link'
+    pose_stamped.header.frame_id = 'base_link'
     pose_stamped.header.stamp = rospy.Time.now()
-    pose_stamped.pose.position.x = x - 0.03
-    pose_stamped.pose.position.y = y - 0.092
-    pose_stamped.pose.position.z = z - 0.015
-    pose_stamped.pose.orientation.x = 0
-    pose_stamped.pose.orientation.y = 0
-    pose_stamped.pose.orientation.z = 0
-    pose_stamped.pose.orientation.w = 1
+    # pose_stamped.pose.position.x = x - 0.03
+    # pose_stamped.pose.position.y = y - 0.092
+    # pose_stamped.pose.position.z = z - 0.015
+    pose_stamped.pose.position.x = x - 0.2
+    pose_stamped.pose.position.y = y 
+    pose_stamped.pose.position.z = z
 
     # odom 좌표계를 기준으로 base_link 좌표계로 변환
     # 테스트 시에는 필요 없음
@@ -347,11 +346,11 @@ def grasp_object(x, y, z):
     # Step 3: 물체를 잡기 위한 자세로 이동
     rospy.loginfo("Transforming position to grasp object...")
     pose_stamped = PoseStamped()
-    pose_stamped.header.frame_id = 'ur3_base_link' # base_link 기준으로
+    pose_stamped.header.frame_id = 'base_link' # base_link 기준으로
     pose_stamped.header.stamp = rospy.Time.now()
     pose_stamped.pose.position.x = x
     pose_stamped.pose.position.y = y 
-    pose_stamped.pose.position.z = z + 0.05
+    pose_stamped.pose.position.z = z + 0.13
     pose_stamped.pose.orientation.x = 1
     pose_stamped.pose.orientation.y = 0
     pose_stamped.pose.orientation.z = 0
@@ -368,7 +367,7 @@ def grasp_object(x, y, z):
     move_ee(
         pose_stamped.pose.position.x,
         pose_stamped.pose.position.y,
-        pose_stamped.pose.position.z - 0.02,
+        pose_stamped.pose.position.z,
         pose_stamped.pose.orientation.x,
         pose_stamped.pose.orientation.y,
         pose_stamped.pose.orientation.z,
@@ -396,51 +395,6 @@ def grasp_object(x, y, z):
     set_origin_pose()
     time.sleep(5)  # 이동 시간 대기
 
-def press_updown(x, y, z):
-    """
-    업다운 버튼을 누르는 일련의 동작을 수행하는 함수
-    :param x: 버튼의 X 좌표
-    :param y: 버튼의 Y 좌표
-    :param z: 버튼의 Z 좌표
-    """
-    rospy.loginfo("Starting updown sequence...")
-    gripper_close()  # 그리퍼 닫기
-    time.sleep(5)  # 그리퍼 동작 시간 대기
-
-    set_number_pose()  # 숫자 자세로 이동
-    time.sleep(5)  # 이동 시간 대기
-
-    move_to_front_object(x, y, z)  # 버튼 앞쪽으로 이동
-    time.sleep(5)  # 이동 시간 대기
-
-    # odom 좌표계를 기준으로 버튼 위치 정의
-    # 지금은 base_link 좌표계 기준으로
-    pose_stamped = PoseStamped()
-    pose_stamped.header.frame_id = 'ur3_base_link'
-    pose_stamped.header.stamp = rospy.Time.now()
-    pose_stamped.pose.position.x = x
-    pose_stamped.pose.position.y = y - 0.05
-    pose_stamped.pose.position.z = z
-    pose_stamped.pose.orientation.x = 0
-    pose_stamped.pose.orientation.y = 0
-    pose_stamped.pose.orientation.z = 0
-    pose_stamped.pose.orientation.w = 1
-
-    # odom 좌표계를 기준으로 base_link 좌표계로 변환
-    # 테스트 시 필요 없음
-    # transformed_pose = transform_pose('base_link', pose_stamped)
-    # if not transformed_pose:
-    #     rospy.logerr("Failed to transform pose to ur3_base_link.")
-    #     return
-
-    rospy.loginfo("Pressing updown button...")
-    # 현재 자세를 유지하면서 엔드 이펙터를 목표 위치로 이동
-    # move_ee_with_current_orientation(
-    #     pose_stamped.pose.position.x,
-    #     pose_stamped.pose.position.y,
-    #     pose_stamped.pose.position.z,
-    # )
-
 def press_number(x, y, z):
     """
     숫자 버튼을 누르는 일련의 동작을 수행하는 함수
@@ -455,15 +409,11 @@ def press_number(x, y, z):
     # odom 좌표계를 기준으로 버튼 위치 정의
     # 지금은 base_link 기준으로
     pose_stamped = PoseStamped()
-    pose_stamped.header.frame_id = 'ur3_base_link'
+    pose_stamped.header.frame_id = 'base_link'
     pose_stamped.header.stamp = rospy.Time.now()
-    pose_stamped.pose.position.x = x
+    pose_stamped.pose.position.x = x - 0.15
     pose_stamped.pose.position.y = y
     pose_stamped.pose.position.z = z
-    pose_stamped.pose.orientation.x = 0
-    pose_stamped.pose.orientation.y = 0
-    pose_stamped.pose.orientation.z = 0
-    pose_stamped.pose.orientation.w = 1
 
     # odom 좌표계를 기준으로 base_link 좌표계로 변환
     # transformed_pose = transform_pose('base_link', pose_stamped)
@@ -473,11 +423,11 @@ def press_number(x, y, z):
 
     rospy.loginfo("Pressing number button...")
     # 현재 자세를 유지하면서 엔드 이펙터를 목표 위치로 이동
-    # move_ee_with_current_orientation(
-    #     pose_stamped.pose.position.x,
-    #     pose_stamped.pose.position.y,
-    #     pose_stamped.pose.position.z,
-    # )
+    move_ee_with_current_orientation(
+        pose_stamped.pose.position.x,
+        pose_stamped.pose.position.y,
+        pose_stamped.pose.position.z,
+    )
 
     set_origin_pose()
     time.sleep(5)
@@ -501,8 +451,11 @@ class ArmGripper(object):
         self.robot = RobotCommander()  # 로봇 상태 정보 가져오기
         self.scene = PlanningSceneInterface()  # 플래닝 씬 인터페이스 초기화
         #move_group = MoveGroupCommander("manipulator")  # MoveGroupCommander 초기화 (그룹 이름: manipulator)
-        group_name = "manipulator"
+        group_name = "ur3_manipulator"
         move_group = MoveGroupCommander(group_name)
+        move_group.set_end_effector_link("tool0")
+        # move_group.set_pose_reference_frame("base_footprint")
+        print(move_group.get_planning_frame())
 
         # Realsense 파이프라인 설정
         self.pipeline = rs.pipeline()
@@ -518,12 +471,14 @@ class ArmGripper(object):
         # 프레임 ID 설정
         self.camera_link = "camera_link"  # 카메라 프레임
        #self.odom_link = "odom"  # 오도메트리 프레임
-        self.base_link = "ur3_base_link" # 테스트 base_link 기준
+        self.base_link = "base_link" # 테스트 base_link 기준
         # 객체 검출 상태 초기화
         self.object_found = False       # 객체 발견 여부
         self.latest_xyz = None     # 최신 객체의 base_link 좌표
 
-        print(move_group.get_current_joint_values())
+        print(move_group.get_current_pose().pose)
+
+        # print(move_group.get_current_joint_values())
     def __call__(self, mode, target_num, target_floor):
         rate = rospy.Rate(15)  # 루프 주기 설정 (15Hz)
 
@@ -632,7 +587,7 @@ class ArmGripper(object):
                 if self.object_found and self.latest_xyz is not None:
                     x_o, y_o, z_o = self.latest_xyz
                     print(x_o, y_o, z_o)
-                    grasp_object(x_o-0.015, y_o+0.04, z_o)     
+                    grasp_object(x_o, y_o-0.04, z_o)     
                 else:
                     rospy.logwarn("No object found yet.")
             else:

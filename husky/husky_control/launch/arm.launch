@@ -3,14 +3,13 @@
     <!-- 그리퍼 실행 -->
     <!-- <include file="$(find rh_p12_rn_a_manager)/launch/rh_p12_rn_a_manager.launch" /> -->
         <!-- 팔 시작 -->
-    <include file="$(find ur_robot_driver)/launch/ur3_bringup.launch">
+    <include file="$(find husky_ur_bringup)/launch/husky_ur_bringup.launch">
         <arg name="robot_ip" value="192.168.131.8" />
     </include>
 
-
     <!-- MoveIt 런치 파일 실행 -->
-    <include file="$(find ur3_moveit_config)/launch/move_group.launch" />
+    <include file="$(find husky_ur_moveit_config)/launch/husky_ur_moveit_planning_execution.launch" />
 
     <!-- camera_link와 tool0 간의 static transform 퍼블리셔 실행 -->
-    <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_tool0_camera_link" args="0 0.05 -0.1 0 0 0 tool0 camera_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher_tool0_camera_link" args="0 0.05 0 0 0 0 tool0 camera_link 100" />
 </launch>

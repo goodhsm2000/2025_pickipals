@@ -19,10 +19,11 @@ rospy.init_node('control_Husky_UR3_with_base_link', anonymous=True)
 robot = RobotCommander()
 scene = PlanningSceneInterface()
 
-group_name = "manipulator"
+group_name = "ur3_manipulator"
 move_group = MoveGroupCommander(group_name)
 FIXED_FRAME = 'base_link'
-
+move_group.set_end_effector_link("tool0")
+move_group.get_planning_frame("base_link")
 error_pub = rospy.Publisher('/error_topic', String, queue_size=10)  # 에러 토픽 퍼블리셔
 
 def move_ee(Px, Py, Pz, Rx, Ry, Rz, Rw):
@@ -91,22 +92,22 @@ def grasp_object(x, y, z):
         0
     )
 
-    input("Press Enter to close the gripper...")
+    # input("Press Enter to close the gripper...")
 
     # Step 4: Close gripper (단발성 퍼블리시)
     #publish_position_close()
     #input("Press Enter to return to home pose...")
 
     # Step 5: Return to home pose
-    set_home_pose()
-    input("Press Enter to open the gripper and release the object...")
+    # set_home_pose()
+    # input("Press Enter to open the gripper and release the object...")
 
     # Step 6: Open gripper (단발성 퍼블리시)
     #publish_position_open()
     #input("Press Enter to return to default pose...")
 
     # Step 7: Default pose
-    set_default_pose()
+    # set_default_pose()
 
 def move_Joint(q1, q2, q3, q4, q5, q6):
     joint_goal = move_group.get_current_joint_values()
@@ -127,12 +128,12 @@ if __name__ == '__main__':
         rospy.loginfo("UR3 Base Link Control Program Initialized.")
 
         # 물체의 좌표값 (base_link 기준, 예제 값)
-        x_dir = -(0.7-0.4)
-        y_dir = 0
-        z_dir = 0.2
+        x_dir = 0.6
+        y_dir = 0.0
+        z_dir = 0.6
         result = move_group.get_current_pose()
         print(result)
-        # grasp_object(x_dir, y_dir, z_dir)
+        grasp_object(x_dir, y_dir, z_dir)
 
     except rospy.ROSInterruptException:
         pass
