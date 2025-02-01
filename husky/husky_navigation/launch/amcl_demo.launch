@@ -29,14 +29,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <include file="$(find sick_scan_xd)/launch/sick_tim_5xx.launch" />
   <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch" /> -->
 
-  <!-- Run the map server -->
-  <arg name="map_file" default="$(find husky_navigation)/maps/electric1.yaml"/>
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-
   <arg name="map_file_path" default="$(find husky_navigation)/maps/electric1_path.yaml"/>
-  <node name="map_server2" pkg="map_server" type="map_server" args="$(arg map_file_path)">
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file_path)">
     <remap from="/map" to="/path_map"/>
   </node>
+
+  <!-- Run the map server -->
+  <arg name="map_file" default="$(find husky_navigation)/maps/electric1.yaml"/>
+  <node name="map_server2" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <node name="filtered_scan_node" pkg="husky_control" type="lidar_clustering.py" output="screen" launch-prefix="python3" />
 

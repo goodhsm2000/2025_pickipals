@@ -97,7 +97,7 @@ def gripper_close():
 
     rospy.loginfo("Closing gripper")
     pub.publish(msg)  # 메시지 발행
-    rospy.sleep(5)  # 명령이 실행될 시간을 대기
+    rospy.sleep(3)  # 명령이 실행될 시간을 대기
 
 def gripper_grasp():
     """그리퍼를 특정 위치로 닫는 함수 (grasping 동작)"""
@@ -113,7 +113,7 @@ def gripper_grasp():
 
     rospy.loginfo("Closing gripper")
     pub.publish(msg)  # 메시지 발행
-    rospy.sleep(5)  # 명령이 실행될 시간을 대기
+    rospy.sleep(3)  # 명령이 실행될 시간을 대기
 
 def move_ee(Px, Py, Pz, Rx, Ry, Rz, Rw):
     """
@@ -244,6 +244,24 @@ def way_point2():
     move_Joint(0.045, -2.861, 2.097, -1.840, -1.594, 3.14)
     rospy.loginfo("Number pose reached.") 
 
+def knock_point1():
+    """노크 경로 1"""
+    rospy.loginfo("Moving to knock point1...")
+    move_Joint(0, -2.05, 0.0, -0.396, 1.570, 0.0)
+    rospy.loginfo("knock point1 reached.") 
+
+def knock_point2():
+    """노크 경로 2"""
+    rospy.loginfo("Moving to knock point2...")
+    move_Joint(0, -2.05, 0.0, -0.854, 1.570, 0.0)
+    rospy.loginfo("knock point2 reached.") 
+
+def knock_point3():
+    """노크 경로 3"""
+    rospy.loginfo("Moving to knock point3...")
+    move_Joint(0, -2.05, 0.0, -1.0, 1.570, 0.0)
+    rospy.loginfo("knock point3 reached.")     
+
 def set_origin_pose():
     rospy.loginfo("Moving to origin pose...")
     move_Joint(-4.7985707418263246e-05, -1.5707724730121058, -4.7985707418263246e-05, -1.570796314870016, 5.992112710373476e-05, -5.990663637334137e-05)
@@ -309,7 +327,7 @@ def move_to_front_object(x, y, z):
     # pose_stamped.pose.position.x = x - 0.03
     # pose_stamped.pose.position.y = y - 0.092
     # pose_stamped.pose.position.z = z - 0.015
-    pose_stamped.pose.position.x = x - 0.2
+    pose_stamped.pose.position.x = x - 0.22
     pose_stamped.pose.position.y = y 
     pose_stamped.pose.position.z = z
 
@@ -374,26 +392,26 @@ def grasp_object(x, y, z):
         pose_stamped.pose.orientation.w
     )
 
-    time.sleep(5)  # 이동 시간 대기
+    time.sleep(2)  # 이동 시간 대기
 
     # Step 4: 그리퍼를 닫아 물체를 잡음
     gripper_grasp()
-    time.sleep(5)  # 그리퍼 동작 시간 대기
+    time.sleep(2)  # 그리퍼 동작 시간 대기
 
     # Step 5: 바구니 자세로 이동
     way_point1()
-    time.sleep(5)  # 이동 시간 대기
+    time.sleep(2)  # 이동 시간 대기
 
     way_point2()
-    time.sleep(5)  # 이동 시간 대기
+    time.sleep(2)  # 이동 시간 대기
 
     # Step 6: 그리퍼를 열어 물체를 놓음
     gripper_open()
-    time.sleep(5)  # 그리퍼 동작 시간 대기
+    time.sleep(2)  # 그리퍼 동작 시간 대기
 
     # Step 7: 기본 자세로 이동
     set_origin_pose()
-    time.sleep(5)  # 이동 시간 대기
+    time.sleep(2)  # 이동 시간 대기
 
 def press_number(x, y, z):
     """
@@ -404,14 +422,14 @@ def press_number(x, y, z):
     """
 
     move_to_front_object(x, y, z)  # 버튼 앞쪽으로 이동
-    time.sleep(5)  # 이동 시간 대기
+    # time.sleep(2)  # 이동 시간 대기
 
     # odom 좌표계를 기준으로 버튼 위치 정의
     # 지금은 base_link 기준으로
     pose_stamped = PoseStamped()
     pose_stamped.header.frame_id = 'base_link'
     pose_stamped.header.stamp = rospy.Time.now()
-    pose_stamped.pose.position.x = x - 0.15
+    pose_stamped.pose.position.x = x - 0.2
     pose_stamped.pose.position.y = y
     pose_stamped.pose.position.z = z
 
@@ -429,11 +447,13 @@ def press_number(x, y, z):
         pose_stamped.pose.position.z,
     )
 
+    move_to_front_object(x, y, z)
+
     set_origin_pose()
-    time.sleep(5)
+    # time.sleep(2)
 
     gripper_open()
-    time.sleep(5)
+    # time.sleep(2)
 
 
 
@@ -441,6 +461,11 @@ class ArmGripper(object):
     def __init__(self):
         torque_on()  # 그리퍼 토크 활성화
         roscpp_initialize(sys.argv)  # MoveIt Commander 초기화
+
+        gripper_close()
+        time.sleep(3)
+        gripper_open()
+        time.sleep(3)
 
         global tf_buffer, tf_listener, error_pub, move_group
         tf_buffer = Buffer()  # TF 버퍼 생성
@@ -490,6 +515,23 @@ class ArmGripper(object):
             # Step 1: 기본 자세로 이동
             set_default_pose()
             time.sleep(3)  # 이동 시간 대기
+
+        elif mode == "knock":
+            rospy.loginfo("knock mode...")
+            # knock 모드에서 gripper_close() 동작만 수행
+            gripper_close()
+            time.sleep(3)
+            knock_point1()
+            time.sleep(2)
+            knock_point2()
+            time.sleep(2)
+            knock_point1()
+            time.sleep(2)
+            knock_point2()
+
+            # knock 모드는 추가로 물체 인식 및 이동이 필요 없는 경우,
+            # object_found를 True로 설정해 while 루프가 바로 종료되도록 함
+            return True   
 
         else:
             rospy.loginfo("elevator mode...")
@@ -594,7 +636,7 @@ class ArmGripper(object):
                 if self.object_found and self.latest_xyz is not None:
                     x_o, y_o, z_o = self.latest_xyz
                     print(x_o, y_o, z_o)
-                    press_number(x_o, y_o, z_o)    
+                    press_number(x_o+0.015, y_o+0.025, z_o-0.015)    
                 else:
                     rospy.logwarn("No EV button found yet.")
 

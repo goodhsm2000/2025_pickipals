@@ -2,10 +2,50 @@
 Changelog for package amcl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.7 (2020-08-27)
+1.17.3 (2023-01-10)
 -------------------
-* (AMCL) add resample limit cache [Melodic] (`#1012 <https://github.com/ros-planning/navigation/issues/1012>`_)
+* [AMCL] Add option to force nomotion update after initialpose (`#1226 <https://github.com/ros-planning/navigation/issues/1226>`_)
+  * Adds a new boolean parameter force_update_after_initialpose. When set to true, an update is forced on the next laser scan callback, such as when the /request_nomotion_update service is called. This often results in an improved robot pose after a manual (not very precise) re-localization - without a need for the robot to move.
+  * Fixes a bunch of compiler warnings (unused variable now, catching exceptions by value), normalizes how tf exceptions are caught
+* [ROS-O] various patches (`#1225 <https://github.com/ros-planning/navigation/issues/1225>`_)
+  * do not specify obsolete c++11 standard
+  this breaks with current versions of log4cxx.
+  * update pluginlib include paths
+  the non-hpp headers have been deprecated since kinetic
+  * use lambdas in favor of boost::bind
+  Using boost's _1 as a global system is deprecated since C++11.
+  The ROS packages in Debian removed the implicit support for the global symbols,
+  so this code fails to compile there without the patch.
+* Contributors: Michael Görner, Stephan
+
+1.17.2 (2022-06-20)
+-------------------
+* Update pf.c (`#1161 <https://github.com/ros-planning/navigation/issues/1161>`_)
+  `#1160 <https://github.com/ros-planning/navigation/issues/1160>`_ AMCL miscalculates orientation covariance for clusters
+* Improved Overall readablity (`#1177 <https://github.com/ros-planning/navigation/issues/1177>`_)
+* fix crashes in AMCL (`#1152 <https://github.com/ros-planning/navigation/issues/1152>`_)
+  * fix: catch runtime_error from roscore
+  * ignore malformed message from laser, otherwise it will crash
+* Fixes `#1117 <https://github.com/ros-planning/navigation/issues/1117>`_ (`#1118 <https://github.com/ros-planning/navigation/issues/1118>`_)
+* Fixed the risk of divide by zero. (`#1099 <https://github.com/ros-planning/navigation/issues/1099>`_)
+* (AMCL) add missing test dep on tf2_py (`#1091 <https://github.com/ros-planning/navigation/issues/1091>`_)
+* (AMCL)(Noetic) use robot pose in tests (`#1087 <https://github.com/ros-planning/navigation/issues/1087>`_)
+* (amcl) fix missing '#if NEW_UNIFORM_SAMPLING' (`#1079 <https://github.com/ros-planning/navigation/issues/1079>`_)
+* Contributors: David V. Lu!!, Matthijs van der Burgh, Noriaki Ando, Supernovae, christofschroeter, easylyou
+
+1.17.1 (2020-08-27)
+-------------------
+* (AMCL) add resample limit cache [Noetic] (`#1014 <https://github.com/ros-planning/navigation/issues/1014>`_)
 * Contributors: Matthijs van der Burgh
+
+1.17.0 (2020-04-02)
+-------------------
+* Merge pull request `#982 <https://github.com/ros-planning/navigation/issues/982>`_ from ros-planning/noetic_prep
+  Noetic Migration
+* map is not subscriptable in python3
+* fix python3 errors in basic_localization.py
+* use upstream pykdl
+* Contributors: Michael Ferguson
 
 1.16.6 (2020-03-18)
 -------------------

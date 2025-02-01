@@ -39,7 +39,7 @@
 #include <costmap_2d/costmap_math.h>
 #include <tf2_ros/message_filter.h>
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::ObstacleLayer, costmap_2d::Layer)
@@ -158,12 +158,11 @@ void ObstacleLayer::onInitialize()
 
       if (inf_is_valid)
       {
-        filter->registerCallback(boost::bind(&ObstacleLayer::laserScanValidInfCallback, this, _1,
-                                            observation_buffers_.back()));
+        filter->registerCallback([this,buffer=observation_buffers_.back()](auto& msg){ laserScanValidInfCallback(msg, buffer); });
       }
       else
       {
-        filter->registerCallback(boost::bind(&ObstacleLayer::laserScanCallback, this, _1, observation_buffers_.back()));
+        filter->registerCallback([this,buffer=observation_buffers_.back()](auto& msg){ laserScanCallback(msg, buffer); });
       }
 
       observation_subscribers_.push_back(sub);
@@ -183,8 +182,7 @@ void ObstacleLayer::onInitialize()
 
         boost::shared_ptr < tf2_ros::MessageFilter<sensor_msgs::PointCloud>
         > filter(new tf2_ros::MessageFilter<sensor_msgs::PointCloud>(*sub, *tf_, global_frame_, 50, g_nh));
-        filter->registerCallback(
-          boost::bind(&ObstacleLayer::pointCloudCallback, this, _1, observation_buffers_.back()));
+        filter->registerCallback([this,buffer=observation_buffers_.back()](auto& msg){ pointCloudCallback(msg, buffer); });
 
       observation_subscribers_.push_back(sub);
       observation_notifiers_.push_back(filter);
@@ -201,8 +199,7 @@ void ObstacleLayer::onInitialize()
 
       boost::shared_ptr < tf2_ros::MessageFilter<sensor_msgs::PointCloud2>
       > filter(new tf2_ros::MessageFilter<sensor_msgs::PointCloud2>(*sub, *tf_, global_frame_, 50, g_nh));
-      filter->registerCallback(
-          boost::bind(&ObstacleLayer::pointCloud2Callback, this, _1, observation_buffers_.back()));
+      filter->registerCallback([this,buffer=observation_buffers_.back()](auto& msg){ pointCloud2Callback(msg, buffer); });
 
       observation_subscribers_.push_back(sub);
       observation_notifiers_.push_back(filter);
@@ -224,8 +221,8 @@ void ObstacleLayer::onInitialize()
 void ObstacleLayer::setupDynamicReconfigure(ros::NodeHandle& nh)
 {
   dsrv_ = new dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>::CallbackType cb = boost::bind(
-      &ObstacleLayer::reconfigureCB, this, _1, _2);
+  dynamic_reconfigure::Server<costmap_2d::ObstaclePluginConfig>::CallbackType cb =
+      [this](auto& config, auto level){ reconfigureCB(config, level); };
   dsrv_->setCallback(cb);
 }
 
@@ -259,6 +256,11 @@ void ObstacleLayer::laserScanCallback(const sensor_msgs::LaserScanConstPtr& mess
     ROS_WARN("High fidelity enabled, but TF returned a transform exception to frame %s: %s", global_frame_.c_str(),
              ex.what());
     projector_.projectLaser(*message, cloud);
+  }
+  catch (std::runtime_error &ex)
+  {
+    ROS_WARN("transformLaserScanToPointCloud error, it seems the message from laser sensor is malformed. Ignore this laser scan. what(): %s", ex.what());
+    return; //ignore this message
   }
 
   // buffer the point cloud
@@ -296,6 +298,11 @@ void ObstacleLayer::laserScanValidInfCallback(const sensor_msgs::LaserScanConstP
     ROS_WARN("High fidelity enabled, but TF returned a transform exception to frame %s: %s",
              global_frame_.c_str(), ex.what());
     projector_.projectLaser(message, cloud);
+  }
+  catch (std::runtime_error &ex)
+  {
+    ROS_WARN("transformLaserScanToPointCloud error, it seems the message from laser sensor is malformed. Ignore this laser scan. what(): %s", ex.what());
+    return; //ignore this message
   }
 
   // buffer the point cloud
@@ -335,8 +342,6 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
 {
   if (rolling_window_)
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
-  if (!enabled_)
-    return;
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   bool current = true;
@@ -423,9 +428,6 @@ void ObstacleLayer::updateFootprint(double robot_x, double robot_y, double robot
 
 void ObstacleLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
 {
-  if (!enabled_)
-    return;
-
   if (footprint_clearing_enabled_)
   {
     setConvexPolygonCost(transformed_footprint_, costmap_2d::FREE_SPACE);

@@ -2,15 +2,51 @@
 Changelog for package move_base
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.7 (2020-08-27)
+1.17.3 (2023-01-10)
 -------------------
+* [ROS-O] various patches (`#1225 <https://github.com/ros-planning/navigation/issues/1225>`_)
+  * do not specify obsolete c++11 standard
+  this breaks with current versions of log4cxx.
+  * update pluginlib include paths
+  the non-hpp headers have been deprecated since kinetic
+  * use lambdas in favor of boost::bind
+  Using boost's _1 as a global system is deprecated since C++11.
+  The ROS packages in Debian removed the implicit support for the global symbols,
+  so this code fails to compile there without the patch.
+* Contributors: Michael Görner
+
+1.17.2 (2022-06-20)
+-------------------
+* Check if stamp of transformed pose is non-zero (`#1200 <https://github.com/ros-planning/navigation/issues/1200>`_)
+* Create move_base catkin library (`#1116 <https://github.com/ros-planning/navigation/issues/1116>`_)
+  Co-authored-by: vkotaru <prasant.kotaru@gmail.com>
+* move_base crash when using default recovery behaviors (`#1071 <https://github.com/ros-planning/navigation/issues/1071>`_)
+* Publish recovery behavior melodic (`#1051 <https://github.com/ros-planning/navigation/issues/1051>`_) (`#1052 <https://github.com/ros-planning/navigation/issues/1052>`_)
+  * First prototype of publishing recovery status
+  custom message tells you where the behavior occured, the name, index,
+  and total number of behaviors.
+  * fix message field typos
+  Co-authored-by: Peter Mitrano <mitranopeter@gmail.com>
+  Co-authored-by: Peter Mitrano <mitranopeter@gmail.com>
+* Contributors: David V. Lu!!, Prasanth Kotaru, Yuki Furuta, mattp256
+
+1.17.1 (2020-08-27)
+-------------------
+* Fix `#933 <https://github.com/ros-planning/navigation/issues/933>`_ (`#988 <https://github.com/ros-planning/navigation/issues/988>`_)
+* Contributors: David V. Lu!!
+
+1.17.0 (2020-04-02)
+-------------------
+* Merge pull request `#982 <https://github.com/ros-planning/navigation/issues/982>`_ from ros-planning/noetic_prep
+  Noetic Migration
+* increase required cmake version
 * move_base: Add options for make_plan service (`#981 <https://github.com/ros-planning/navigation/issues/981>`_)
   Adds the following two parameters for the ~make_plan service:
   1. make_plan_clear_costmap
   Whether or not to clear the global costmap on make_plan service call.
   2. make_plan_add_unreachable_goal
   Whether or not to add the original goal to the path if it is unreachable in the make_plan service call.
-* Contributors: nxdefiant
+* Contributors: Michael Ferguson, nxdefiant
 
 1.16.6 (2020-03-18)
 -------------------

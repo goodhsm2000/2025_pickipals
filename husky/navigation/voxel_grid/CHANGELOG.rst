@@ -2,8 +2,21 @@
 Changelog for package voxel_grid
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.7 (2020-08-27)
+1.17.3 (2023-01-10)
 -------------------
+
+1.17.2 (2022-06-20)
+-------------------
+
+1.17.1 (2020-08-27)
+-------------------
+
+1.17.0 (2020-04-02)
+-------------------
+* Merge pull request `#982 <https://github.com/ros-planning/navigation/issues/982>`_ from ros-planning/noetic_prep
+  Noetic Migration
+* increase required cmake version
+* Contributors: Michael Ferguson
 
 1.16.6 (2020-03-18)
 -------------------

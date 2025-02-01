@@ -96,7 +96,7 @@ class PickAndPlaceRobot(object):
         stop_button = Button(self.window, text="Stop", width=20, height=5, command=self.stop_button_clicked)
         stop_button.grid(row=9, column=2, columnspan=2, sticky="nsew", padx=5, pady=10)
 
-        # 추가 기능 버튼 (Pickup Mode, Click Button Mode)
+        # 추가 기능 버튼 (Pickup Mode, Click Button Mode, Gripper Mode)
         feature_label = Label(self.window, text="Arm Mode", font=("Arial", 15), height=4)
         feature_label.grid(row=10, column=0, columnspan=4, pady=(50, 10), sticky="nsew")
 
@@ -105,6 +105,10 @@ class PickAndPlaceRobot(object):
 
         clickbutton_mode_button = Button(self.window, text="Click Button Mode", width=15, height=5, command=self.clickbutton_mode)
         clickbutton_mode_button.grid(row=11, column=2, columnspan=2, sticky="nsew", padx=5, pady=10)
+
+        # Gripper Mode 버튼 추가
+        knock_mode_button = Button(self.window, text="knock Mode", width=15, height=5, command=self.knock_mode)
+        knock_mode_button.grid(row=12, column=0, columnspan=4, sticky="nsew", padx=5, pady=10)
 
         # 동작 플래그
         self.START = False
@@ -186,6 +190,15 @@ class PickAndPlaceRobot(object):
         else:
             rospy.logwarn("Click Button 실패!")
 
+    def knock_mode(self):
+        """knock 모드 버튼"""
+        # ArmGripper 노드를 호출하여 gripper 기능 수행
+        result = self.armgripper("knock", self.target_num, self.floor_num)
+        if result:
+            rospy.loginfo("knock 동작 완료!")
+        else:
+            rospy.logwarn("knock 동작 실패!")
+
     def move_base_shutdown(self):
         """move_base 목표를 취소"""
         rospy.loginfo("Stopping the Goal...")
@@ -203,7 +216,7 @@ class PickAndPlaceRobot(object):
         """
         주기적으로 실행될 함수.
         여기서는 START가 True인 경우에 특정 로직을 수행하도록 할 수 있지만,
-        현재는 Pickup/Clickbutton만 버튼으로 제어하도록 했으므로
+        현재는 Pickup/Clickbutton/Gripper만 버튼으로 제어하도록 했으므로
         필요하면 추가 동작을 이 곳에서 구현하면 됨.
         """
         if self.START:

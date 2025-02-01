@@ -146,7 +146,7 @@ class PickAndPlaceRobot(object):
             self.floor_num.insert(0, str(self.floor))  # 선택한 층수 입력란에 표시
             self.floor_num = self.floor_num.get()
             print(self.floor_num)
-            print(self.floor_num == "5")
+            # print(self.floor_num == "5")
             print(f"선택된 층수: {self.floor}")
 
         else:

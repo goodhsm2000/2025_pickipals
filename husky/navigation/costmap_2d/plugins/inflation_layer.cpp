@@ -40,7 +40,7 @@
 #include <costmap_2d/costmap_math.h>
 #include <costmap_2d/footprint.h>
 #include <boost/thread.hpp>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::InflationLayer, costmap_2d::Layer)
 
@@ -83,8 +83,8 @@ void InflationLayer::onInitialize()
     seen_size_ = 0;
     need_reinflation_ = false;
 
-    dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb = boost::bind(
-        &InflationLayer::reconfigureCB, this, _1, _2);
+    dynamic_reconfigure::Server<costmap_2d::InflationPluginConfig>::CallbackType cb =
+        [this](auto& config, auto level){ reconfigureCB(config, level); };
 
     if (dsrv_ != NULL){
       dsrv_->clearCallback();
@@ -176,7 +176,7 @@ void InflationLayer::onFootprintChanged()
 void InflationLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
 {
   boost::unique_lock < boost::recursive_mutex > lock(*inflation_access_);
-  if (!enabled_ || (cell_inflation_radius_ == 0))
+  if (cell_inflation_radius_ == 0)
     return;
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)

@@ -7,7 +7,7 @@ from sensor_msgs.msg import LaserScan
 from sklearn.cluster import DBSCAN
 
 # 전방 각도(도 단위)
-FRONT_ANGLE_DEG = 150.0
+FRONT_ANGLE_DEG = 140.0
 
 def lidar_callback(scan):
     # 원본 LaserScan에서 각도/거리 배열 생성

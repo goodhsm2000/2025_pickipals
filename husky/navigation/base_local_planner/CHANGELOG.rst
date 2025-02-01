@@ -2,10 +2,36 @@
 Changelog for package base_local_planner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.7 (2020-08-27)
+1.17.3 (2023-01-10)
+-------------------
+* [ROS-O] various patches (`#1225 <https://github.com/ros-planning/navigation/issues/1225>`_)
+  * do not specify obsolete c++11 standard
+  this breaks with current versions of log4cxx.
+  * update pluginlib include paths
+  the non-hpp headers have been deprecated since kinetic
+  * use lambdas in favor of boost::bind
+  Using boost's _1 as a global system is deprecated since C++11.
+  The ROS packages in Debian removed the implicit support for the global symbols,
+  so this code fails to compile there without the patch.
+* Contributors: Michael Görner
+
+1.17.2 (2022-06-20)
+-------------------
+* Commit 89a8593 removed footprint scaling. This brings it back. (`#886 <https://github.com/ros-planning/navigation/issues/886>`_) (`#1204 <https://github.com/ros-planning/navigation/issues/1204>`_)
+  Co-authored-by: Frank Höller <frank.hoeller@fkie.fraunhofer.de>
+* Contributors: Michael Ferguson
+
+1.17.1 (2020-08-27)
 -------------------
 * occdist_scale should not be scaled by the costmap resolution as it doesn't multiply a value that includes a distance. (`#1000 <https://github.com/ros-planning/navigation/issues/1000>`_)
 * Contributors: wjwagner
+
+1.17.0 (2020-04-02)
+-------------------
+* Merge pull request `#982 <https://github.com/ros-planning/navigation/issues/982>`_ from ros-planning/noetic_prep
+  Noetic Migration
+* increase required cmake version
+* Contributors: Michael Ferguson
 
 1.16.6 (2020-03-18)
 -------------------

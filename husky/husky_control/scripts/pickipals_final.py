@@ -15,6 +15,8 @@ from std_msgs.msg import String
 import numpy as np
 from collections import deque
 # import tf
+import subprocess
+import time
 
 from geometry_msgs.msg import PoseStamped
 from std_srvs.srv import Empty
@@ -24,6 +26,7 @@ from sensor_msgs.msg import LaserScan
 
 from MoveBase import MoveBase
 from MapChange import MapChange
+from MapChangev2 import MapChangev2
 from IsDoorOpen import IsDoorOpen
 from ArmGripper import ArmGripper
 
@@ -37,17 +40,19 @@ class Task:
 
 INITIAL_POSE : dict = {'x' : 32.44, 'y' : -10.02,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.744,'qw' : 0.667}
 
-MAP_CHANGE_POSE : dict = {'x' : -0.15 , 'y' : -0.04,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.071,'qw' : 1.0}
+MAP_CHANGE_POSE : dict = {'x' : 0.112 , 'y' : 0.076,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.035,'qw' : 1.0}
 
 PICKUP_DESTINATION : dict = {'x' : 3.423 , 'y' : -2.405,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.715,'qw' : 0.6985} # 완
 
 ELEVATOR_BUTTON_DESTINATION : dict = {'x' : 41.68 , 'y' : -23.18,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0,'qw' : 1}
 
-FRONT_ELEVATOR_DESTINATION : dict = {'x' : -8.645 , 'y' : 31.30, 'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.616,'qw' : 0.787} #완
+FRONT_ELEVATOR_DESTINATION : dict = {'x' : -8.592 , 'y' : 31.41, 'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.696,'qw' : 0.717} #완
 
-ELEVATOR_DESTINATION : dict = {'x' : -8.377 , 'y' : 33.288,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.676,'qw' : 0.736}
+ELEVATOR_DESTINATION : dict = {'x' : -8.54 , 'y' : 33.62,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0,'qw' : 1.0}
 
-HEADING_POSE : dict = {'x' : -8.377 , 'y' : 33.288,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.716,'qw' : 0.697}
+ELEVATOR_BUTTON_POSE : dict = {'x' : -8.377 , 'y' : 33.288,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.032,'qw' : 1.0}
+
+HEADING_POSE : dict = {'x' : -8.54 , 'y' : 33.62,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.641,'qw' : 0.767}
 
 DELIVER_DESTINATION : dict = {'x' : 35.347 , 'y' : 13.657,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.660,'qw' : 0.750}
 
@@ -60,19 +65,21 @@ class PickAndPlaceRobot(object):
         self.tasks = [
             # Task(name="initialize_pose", description="Pose 초기화"),
             # Task(name="move_to_pickup", description="픽업 장소로 이동"),
-            Task(name="pickup", description="목표 물건 픽업"),
+            # Task(name="pickup", description="목표 물건 픽업"),
             # Task(name="move_to_up_button_place", description="엘리베이터 버튼 장소"),
             # Task(name="move_to_front_elevator", description="엘리베이터 앞으로 이동"),
             # Task(name="up button click", description="엘리베이터 올라가는 버튼 클릭"),
-            # Task(name="move_to_elevator", description="엘리베이터로 이동"),
-            # Task(name="heading_straight", description="정면 바라보기"),
-            # Task(name="clickbutton", description="엘리베이터 버튼 클릭"),
+            Task(name="isdooropen", description="엘리베이터 문 열렸는지 확인"),
+            Task(name="move_to_elevator", description="엘리베이터로 이동"),
+            # # Task(name="heading_button", description="버튼 쪽 바라보기"),
+            Task(name="clickbutton", description="엘리베이터 버튼 클릭"),
+            Task(name="heading_straight", description="정면 바라보기"),
             Task(name="change_map", description="맵 변경"),
             Task(name="initialize_pose_after_map_change", description="맵 변경 후 Pose 초기화"),
             Task(name="isdooropen", description="엘리베이터 문 열렸는지 확인"),
-            # Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
-            Task(name="move_to_deliver", description="배달 장소로 이동")
-            # Task(name="knock_and_deliver", description="문 두드리기 및 배달")
+            # # Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
+            Task(name="move_to_deliver", description="배달 장소로 이동"),
+            Task(name="knock", description="문 두드리기")  # 마지막 단계
         ]
 
         # rospy.wait_for_service('/move_base/clear_costmaps')
@@ -83,8 +90,9 @@ class PickAndPlaceRobot(object):
 
         self.driving = MoveBase()
         self.map_change = MapChange()
+        self.map_changev2 = MapChangev2()
         self.isdooropen = IsDoorOpen()
-        # self.armgripper = ArmGripper()
+        self.armgripper = ArmGripper()
         # self.istargetfloor = IsTargetFloor()
 
         self.START = False
@@ -117,8 +125,8 @@ class PickAndPlaceRobot(object):
         self.obj_num = Entry(self.window, width=10)
         self.obj_num.grid(row=3, column=2, pady=10, sticky="w")
         
-        self.create_object_button("RED", 1)
-        self.create_object_button("BLUE", 2)
+        self.create_object_button("택배 1", 1)
+        self.create_object_button("택배 2", 2)
 
 
         drive_label = Label(self.window, text="Driving Mode", font=("Arial", 15), height=4)
@@ -134,7 +142,7 @@ class PickAndPlaceRobot(object):
         # elevator door judge param
         self.min_ang = -45
         self.max_ang = 45 
-        self.threshold = 2
+        self.threshold = 1.5
         self.target_num = 1
         
         # self.floor_num = "5"
@@ -248,6 +256,9 @@ class PickAndPlaceRobot(object):
             init_pose.publish(init_msg)
             rospy.sleep(0.1)
 
+        subprocess.Popen(['rosservice', 'call', '/move_base/clear_costmaps'])
+        time.sleep(5)
+
     def poweroff(self):
 
         print("poweroff")
@@ -332,6 +343,19 @@ class PickAndPlaceRobot(object):
                     print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
                     self.cur_task_level += 1
 
+            # 버튼 쪽 바라보기
+            elif self.tasks[self.cur_task_level].name == "heading_button":
+                is_completed = self.driving(ELEVATOR_BUTTON_POSE, self.move_base)
+                if is_completed:
+                    print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
+                    self.cur_task_level += 1
+
+
+            elif self.tasks[self.cur_task_level].name == "clickbutton":
+                is_completed = self.armgripper("clickbutton", self.target_num, self.floor_num)
+                if is_completed:
+                    self.cur_task_level += 1
+            
             # 정면 바라보기
             elif self.tasks[self.cur_task_level].name == "heading_straight":
                 is_completed = self.driving(HEADING_POSE, self.move_base)
@@ -339,15 +363,10 @@ class PickAndPlaceRobot(object):
                     print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
                     self.cur_task_level += 1
 
-            elif self.tasks[self.cur_task_level].name == "clickbutton":
-                is_completed = self.armgripper("clickbutton", self.target_num, self.floor_num)
-                if is_completed:
-                    self.cur_task_level += 1
-            
             # floor_num에 해당하는 층의 map으로 변경 
             # 추후 GUI를 이용해 기능 확장 가능 
             elif self.tasks[self.cur_task_level].name == "change_map":
-                is_completed = self.map_change(self.floor_num)
+                is_completed = self.map_changev2(self.floor_num)
                 if is_completed:
                     print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
                     self.cur_task_level += 1
@@ -375,6 +394,14 @@ class PickAndPlaceRobot(object):
                 if is_completed:
                     print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
                     self.cur_task_level += 1
+
+            elif self.tasks[self.cur_task_level].name == "knock":
+                # 문 두드리기 동작 예시. ArmGripper에 knock 모드가 있다고 가정.
+                is_completed = self.armgripper("knock", self.target_num, self.floor_num)
+                if is_completed:
+                    print(f"Task '{self.tasks[self.cur_task_level].name}' completed!")
+                    print("Knock the door and finish.")
+                    self.cur_task_level += 1        
 
             ## 문 두드리기 & 최종 물건 drop 좌표 전달 및 물체 pickup 수행 part
             # ----

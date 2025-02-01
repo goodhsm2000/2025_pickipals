@@ -2,8 +2,38 @@
 Changelog for package global_planner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.16.7 (2020-08-27)
+1.17.3 (2023-01-10)
 -------------------
+* [ROS-O] various patches (`#1225 <https://github.com/ros-planning/navigation/issues/1225>`_)
+  * do not specify obsolete c++11 standard
+  this breaks with current versions of log4cxx.
+  * update pluginlib include paths
+  the non-hpp headers have been deprecated since kinetic
+  * use lambdas in favor of boost::bind
+  Using boost's _1 as a global system is deprecated since C++11.
+  The ROS packages in Debian removed the implicit support for the global symbols,
+  so this code fails to compile there without the patch.
+* Contributors: Michael Görner
+
+1.17.2 (2022-06-20)
+-------------------
+* Throttled failed to get plan error to 5 seconds (`#1102 <https://github.com/ros-planning/navigation/issues/1102>`_)
+* Fixed the risk of divide by zero. (`#1099 <https://github.com/ros-planning/navigation/issues/1099>`_)
+* No virtual destructor polyformic classes fixed.  (`#1100 <https://github.com/ros-planning/navigation/issues/1100>`_)
+* Fixes `#1026 <https://github.com/ros-planning/navigation/issues/1026>`_ (`#1028 <https://github.com/ros-planning/navigation/issues/1028>`_)
+* correctly delete previously allocated array (`#1025 <https://github.com/ros-planning/navigation/issues/1025>`_)
+  Co-authored-by: Fedor Vlasov <fedor.vlasov@de.kaercher.com>
+* Contributors: David V. Lu!!, Noriaki Ando, Orhan G. Hafif, mechatheo
+
+1.17.1 (2020-08-27)
+-------------------
+
+1.17.0 (2020-04-02)
+-------------------
+* Merge pull request `#982 <https://github.com/ros-planning/navigation/issues/982>`_ from ros-planning/noetic_prep
+  Noetic Migration
+* increase required cmake version
+* Contributors: Michael Ferguson
 
 1.16.6 (2020-03-18)
 -------------------
