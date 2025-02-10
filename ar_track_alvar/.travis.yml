@@ -1,22 +1,37 @@
+sudo: required
+dist: trusty
 language: generic
-services:
-  - docker
+
+compiler:
+  - gcc
 
 notifications:
   email:
-    on_success: change
     on_failure: always
+    recipients:
+      - 130s@2000.jukuin.keio.ac.jp
 env:
   global:
-    - CATKIN_LINT=pedantic
-    - CATKIN_LINT_ARGS='--ignore description_boilerplate'
-    - CMAKE_ARGS=-DCMAKE_BUILD_TYPE=Release
-    - PYLINT_ARGS='--output-format=parseable --errors-only'
-    - PYLINT_CHECK=true
-    - ROS_REPO=main
+    - ROS_PARALLEL_JOBS=-j4
   matrix:
-    - ROS_DISTRO=noetic
+    - ROS_DISTRO="kinetic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu USE_DEB=true NOT_TEST_INSTALL=true ABICHECK_URL='github:ros-perception/ar_track_alvar/#kinetic-devel'
+    - ROS_DISTRO="kinetic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu USE_DEB=true NOT_TEST_INSTALL=true VERBOSE_OUTPUT='true'
+    - ROS_DISTRO="kinetic" PRERELEASE=true
+    - ROS_DISTRO="lunar" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu USE_DEB=true NOT_TEST_INSTALL=true
+    - ROS_DISTRO="lunar" ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu USE_DEB=true NOT_TEST_INSTALL=true VERBOSE_OUTPUT='true'
+    - ROS_DISTRO="lunar" PRERELEASE=true
+    - ROS_DISTRO="melodic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu USE_DEB=true NOT_TEST_INSTALL=true ABICHECK_URL='github:ros-perception/ar_track_alvar/#kinetic-devel'
+    - ROS_DISTRO="melodic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu USE_DEB=true NOT_TEST_INSTALL=true VERBOSE_OUTPUT='true'
+    - ROS_DISTRO="melodic" PRERELEASE=true
+matrix:
+  allow_failures:
+    - env: ROS_DISTRO="kinetic" PRERELEASE=true
+    - env: ROS_DISTRO="lunar" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu USE_DEB=true NOT_TEST_INSTALL=true
+    - env: ROS_DISTRO="lunar" ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu USE_DEB=true NOT_TEST_INSTALL=true VERBOSE_OUTPUT='true'
+    - env: ROS_DISTRO="lunar" PRERELEASE=true
+    - env: ROS_DISTRO="melodic" PRERELEASE=true
 install:
-  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master
+  - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
+
 script:
-  - .industrial_ci/travis.sh
+  - .ci_config/travis.sh

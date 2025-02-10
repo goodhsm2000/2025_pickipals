@@ -1,0 +1,21 @@
+<launch>
+  <!-- 마커 -> 3층 버튼 -->
+  <node pkg="tf" type="static_transform_publisher" name="marker_to_3f"
+        args="0 0.058 0  0 0 0  ar_marker_1  3f  100" />
+
+  <!-- 마커 -> 4층 버튼 -->
+  <node pkg="tf" type="static_transform_publisher" name="marker_to_4f"
+        args="0.062 0 0  0 0 0  3f  4f  100" />
+
+  <!-- 마커 -> 5층 버튼 -->
+  <node pkg="tf" type="static_transform_publisher" name="marker_to_5f"
+        args="0.124 0 0  0 0 0  3f  5f  100" />
+
+  <!-- 마커 -> 2층 버튼 -->
+  <node pkg="tf" type="static_transform_publisher" name="marker_to_2f"
+        args="-0.062 0 0 0 0 0  3f  2f  100" />
+
+  <!-- 마커 -> 1층 버튼 -->
+  <node pkg="tf" type="static_transform_publisher" name="marker_to_1f"
+        args="-0.124 0 0 0 0 0  3f  1f  100" />
+</launch>

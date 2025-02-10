@@ -24,287 +24,283 @@
 #include "ar_track_alvar/Alvar.h"
 #include "ar_track_alvar/Optimization.h"
 #include "time.h"
-#include <opencv2/highgui.hpp>
 
 #include <iostream>
 using namespace std;
 
-namespace alvar
-{
+namespace alvar {
+
 Optimization::Optimization(int n_params, int n_meas)
 {
-  estimate_param = 0;
-  J = cv::Mat::zeros(n_meas, n_params, CV_64F);
-  JtJ = cv::Mat::zeros(n_params, n_params, CV_64F);
-  tmp = cv::Mat::zeros(n_params, n_meas, CV_64F);
-  W = cv::Mat::zeros(n_meas, n_meas, CV_64F);
-  diag = cv::Mat::zeros(n_params, n_params, CV_64F);
-  err = cv::Mat::zeros(n_meas, 1, CV_64F);
-  delta = cv::Mat::zeros(n_params, 1, CV_64F);
-  x_minus = cv::Mat::zeros(n_params, 1, CV_64F);
-  x_plus = cv::Mat::zeros(n_params, 1, CV_64F);
-  x_tmp1 = cv::Mat::zeros(n_meas, 1, CV_64F);
-  x_tmp2 = cv::Mat::zeros(n_meas, 1, CV_64F);
-  tmp_par = cv::Mat::zeros(n_params, 1, CV_64F);
+	estimate_param = 0;
+	J       = cvCreateMat(n_meas,   n_params, CV_64F); cvZero(J);
+	JtJ     = cvCreateMat(n_params, n_params, CV_64F); cvZero(JtJ);
+	tmp     = cvCreateMat(n_params, n_meas,   CV_64F); cvZero(tmp);
+	W       = cvCreateMat(n_meas,   n_meas,   CV_64F); cvZero(W); 
+	diag    = cvCreateMat(n_params, n_params, CV_64F); cvZero(diag);
+	err     = cvCreateMat(n_meas,   1, CV_64F); cvZero(err);
+	delta   = cvCreateMat(n_params, 1, CV_64F); cvZero(delta);
+	x_minus = cvCreateMat(n_params, 1, CV_64F); cvZero(x_minus);
+	x_plus  = cvCreateMat(n_params, 1, CV_64F); cvZero(x_plus);
+	x_tmp1  = cvCreateMat(n_meas,   1, CV_64F); cvZero(x_tmp1);
+	x_tmp2  = cvCreateMat(n_meas,   1, CV_64F); cvZero(x_tmp2);
+	tmp_par = cvCreateMat(n_params, 1, CV_64F); cvZero(tmp_par);
 }
 
 Optimization::~Optimization()
 {
-  J.release();
-  JtJ.release();
-  diag.release();
-  tmp.release();
-  W.release();
-  err.release();
-  delta.release();
-  x_plus.release();
-  x_minus.release();
-  x_tmp1.release();
-  x_tmp2.release();
-  tmp_par.release();
-  estimate_param = 0;
+	cvReleaseMat(&J);
+	cvReleaseMat(&JtJ);
+	cvReleaseMat(&diag);
+	cvReleaseMat(&tmp);
+	cvReleaseMat(&W);
+	cvReleaseMat(&err);
+	cvReleaseMat(&delta);
+	cvReleaseMat(&x_plus);
+	cvReleaseMat(&x_minus);
+	cvReleaseMat(&x_tmp1);
+	cvReleaseMat(&x_tmp2);
+	cvReleaseMat(&tmp_par);
+	estimate_param = 0;
 }
 
 double Optimization::CalcTukeyWeight(double residual, double c)
 {
-  // const double c = 3; // squared distance in the model tracker
-  double ret = 0;
+	//const double c = 3; // squared distance in the model tracker
+	double ret=0;
 
-  if (fabs(residual) <= c)
-  {
-    double tmp = 1.0 - ((residual / c) * (residual / c));
-    ret = ((c * c) / 6.0) * (1.0 - tmp * tmp * tmp);
-  }
-  else
-    ret = (c * c) / 6.0;
-
-  if (residual)
-    ret = fabs(sqrt(ret) / residual);
-  else
-    ret = 1.0;  // ???
-
-  return ret;
+	if(fabs(residual) <= c)
+	{
+		double tmp = 1.0-((residual/c)*(residual/c));
+		ret = ((c*c)/6.0)*(1.0-tmp*tmp*tmp);
+	}
+	else
+		ret = (c*c)/6.0;
+	
+	if(residual)
+		ret = fabs(sqrt(ret)/residual);
+	else
+		ret = 1.0; // ???
+	
+	return ret;
 }
 
 double Optimization::CalcTukeyWeightSimple(double residual, double c)
 {
-  // const double c = 3;
-  double ret = 0;
+	//const double c = 3;
+	double ret=0;
 
-  double x2 = residual * residual;
-  if (x2 < c * c)
-    return residual;
-  else
-    return c;
+	double x2 = residual*residual;
+	if(x2<c*c) return residual;
+	else return c;
 }
 
-void Optimization::CalcJacobian(cv::Mat& x, cv::Mat& J,
-                                EstimateCallback Estimate)
+void Optimization::CalcJacobian(CvMat* x, CvMat* J, EstimateCallback Estimate)
 {
-  const double step = 0.001;
+	const double step = 0.001;
 
-  J.setTo(cv::Scalar::all(0));
-  for (int i = 0; i < J.cols; i++)
-  {
-    cv::Mat J_column = J.col(i);
+	cvZero(J);
+	for (int i=0; i<J->cols; i++)
+	{
+		CvMat J_column;
+		cvGetCol(J, &J_column, i);
 
-    delta.setTo(cv::Scalar::all(0));
-    delta.at<double>(i, 0) = step;
-    x_plus = x + delta;
-    delta.at<double>(i, 0) = -step;
-    x_minus = x + delta;
+		cvZero(delta); 
+		cvmSet(delta, i, 0, step);
+		cvAdd(x, delta, x_plus);
+		cvmSet(delta, i, 0, -step);
+		cvAdd(x, delta, x_minus);
 
-    Estimate(x_plus, x_tmp1, estimate_param);
-    Estimate(x_minus, x_tmp2, estimate_param);
-    J_column = x_tmp1 - x_tmp2;
-    J_column = J_column * 1.0 / (2 * step);
-  }
+		Estimate(x_plus,  x_tmp1, estimate_param);
+		Estimate(x_minus, x_tmp2, estimate_param);
+		cvSub(x_tmp1, x_tmp2, &J_column);
+		cvScale(&J_column, &J_column, 1.0/(2*step));
+	}
 }
 
-double Optimization::Optimize(
-    cv::Mat& parameters,    // Initial values are set
-    cv::Mat& measurements,  // Some observations
-    double stop, int max_iter, EstimateCallback Estimate, void* param,
-    OptimizeMethod method,
-    const cv::Mat& parameters_mask,  // Mask indicating non-constant parameters)
-    const cv::Mat& J_mat, const cv::Mat& weights)
+
+double Optimization::Optimize(CvMat* parameters,      // Initial values are set
+							  CvMat* measurements,    // Some observations
+							  double stop,
+							  int	max_iter,
+							  EstimateCallback Estimate,
+							  void *param,
+							  OptimizeMethod method,
+							  CvMat* parameters_mask, // Mask indicating non-constant parameters)
+							  CvMat* J_mat,
+							  CvMat* weights)
 {
-  int n_params = parameters.rows;
-  int n_meas = measurements.rows;
-  double error_new = 0;
-  double error_old = 0;
-  double n1, n2;
-  int cntr = 0;
-  estimate_param = param;
-  lambda = 0.001;
 
-  while (true)
-  {
-    if (J_mat.empty())
-      CalcJacobian(parameters, J, Estimate);
-    else
-      J = J_mat;
+	int n_params = parameters->rows;
+	int n_meas   = measurements->rows;
+	double error_new = 0;
+	double error_old = 0;
+	double n1, n2;
+	int cntr = 0;
+	estimate_param = param;
+	lambda = 0.001;
 
-    // Zero the columns for constant parameters
-    // TODO: Make this into a J-sized mask matrix before the iteration loop
-    if (!parameters_mask.empty())
-      for (int i = 0; i < parameters_mask.rows; i++)
-      {
-        if (parameters_mask.at<uchar>(i, 0) == 0)
-        {
-          cv::Rect rect;
-          rect.height = J.rows;
-          rect.width = 1;
-          rect.y = 0;
-          rect.x = i;
-          cv::Mat foo = J(rect);
-          foo.setTo(cv::Scalar::all(0));
-        }
-      }
+	while(true)
+	{
+		if(!J_mat)
+			CalcJacobian(parameters, J, Estimate);
+		else
+			J = J_mat;
 
-    Estimate(parameters, x_tmp1, estimate_param);
-    err = measurements - x_tmp1;  // err = residual
-    error_old = cv::norm(err, cv::NORM_L2);
+		// Zero the columns for constant parameters
+		// TODO: Make this into a J-sized mask matrix before the iteration loop
+		if(parameters_mask)
+		for (int i=0; i<parameters_mask->rows; i++) {
+			if (cvGet2D(parameters_mask, i, 0).val[0] == 0) {
+				CvRect rect;
+				rect.height = J->rows; rect.width = 1;
+				rect.y = 0; rect.x = i;
+				CvMat foo;
+				cvGetSubRect(J, &foo, rect);
+				cvZero(&foo);
+			}
+		}
 
-    switch (method)
-    {
-      case (GAUSSNEWTON):
+		Estimate(parameters, x_tmp1, estimate_param);
+		cvSub(measurements, x_tmp1, err); // err = residual
+		error_old = cvNorm(err, 0, CV_L2);
 
-        cv::mulTransposed(J, JtJ, true);
-        cv::invert(JtJ, JtJ, cv::DECOMP_SVD);
-        cv::gemm(JtJ, J, 1.0, 0, 0, tmp, cv::GEMM_2_T);  // inv(JtJ)Jt
+		switch(method)
+		{
+			case (GAUSSNEWTON) :
 
-        delta = tmp * err;
-        parameters = delta + parameters;
+				cvMulTransposed(J, JtJ, 1);
+				cvInv(JtJ, JtJ, CV_SVD);
+				cvGEMM(JtJ, J, 1.0, 0, 0, tmp, CV_GEMM_B_T); // inv(JtJ)Jt
+				cvMatMul(tmp, err, delta);
+				cvAdd(delta, parameters, parameters);
 
-        // Lopetusehto
-        n1 = cv::norm(delta);
-        n2 = cv::norm(parameters);
+				// Lopetusehto
+				n1 = cvNorm(delta);
+				n2 = cvNorm(parameters);
 
-        if (((n1 / n2) < stop) || (cntr >= max_iter))
-          goto end;
+				if( ((n1/n2) < stop) ||
+					(cntr >= max_iter) )
+					goto end; 
 
-        break;
+			break;
 
-      case (LEVENBERGMARQUARDT):
-        cv::setIdentity(diag, cv::Scalar(lambda));
+			case (LEVENBERGMARQUARDT) :
 
-        if (!weights.empty())
-          for (int k = 0; k < W.rows; ++k)
-            W.at<double>(k, k) = weights.at<double>(k);
+				cvSetIdentity(diag, cvRealScalar(lambda));
 
-        // JtWJ
-        if (!weights.empty())
-        {
-          cv::gemm(J, W, 1, 0, 0, tmp, cv::GEMM_1_T);
-          cv::gemm(tmp, J, 1, 0, 0, JtJ, 0);
-        }
-        else
-          cv::mulTransposed(J, JtJ, true);
+				if(weights)
+					for(int k = 0; k < W->rows; ++k)
+						cvmSet(W, k, k, weights->data.db[k]);
 
-        // JtJ + lambda*I
-        // or JtWJ + lambda*I if weights are used...
-        JtJ = JtJ + diag;
-        cv::invert(JtJ, JtJ, cv::DECOMP_SVD);
-        cv::gemm(JtJ, J, 1.0, 0, 0, tmp, cv::GEMM_2_T);
+				// JtWJ
+				if(weights)
+				{
+					cvGEMM(J, W, 1, 0, 0, tmp, CV_GEMM_A_T);
+					cvGEMM(tmp, J, 1, 0, 0, JtJ, 0);
+				}
+				else
+					cvMulTransposed(J, JtJ, 1);
 
-        if (!weights.empty())
-          cv::gemm(tmp, W, 1, 0, 0, tmp, 0);
+				// JtJ + lambda*I
+				// or JtWJ + lambda*I if weights are used...
+				cvAdd(JtJ, diag, JtJ);
+				cvInv(JtJ, JtJ, CV_SVD);
+				cvGEMM(JtJ, J, 1.0, 0, 0, tmp, CV_GEMM_B_T);
+				
+				if(weights)
+					cvGEMM(tmp, W, 1, 0, 0, tmp, 0);
+				
+				cvMatMul(tmp, err, delta);
+				cvAdd(delta, parameters, tmp_par);
 
-        delta = tmp * err;
-        tmp_par = delta * parameters;
+				Estimate(tmp_par, x_tmp1, estimate_param);
+				cvSub(measurements, x_tmp1, err);
 
-        Estimate(tmp_par, x_tmp1, estimate_param);
-        err = measurements - x_tmp1;
+				error_new = cvNorm(err, 0, CV_L2);
+			
+				if(error_new < error_old)
+				{
+					cvCopy(tmp_par, parameters);
+					lambda = lambda/10.0;
+				}
+				else
+				{
+					lambda = lambda*10.0;
+				}
+				if(lambda>10) lambda = 10;
+				if(lambda<0.00001) lambda = 0.00001;
 
-        error_new = cv::norm(err, cv::NORM_L2);
+				n1 = cvNorm(delta);
+				n2 = cvNorm(parameters);
 
-        if (error_new < error_old)
-        {
-          tmp_par.copyTo(parameters);
-          lambda = lambda / 10.0;
-        }
-        else
-        {
-          lambda = lambda * 10.0;
-        }
-        if (lambda > 10)
-          lambda = 10;
-        if (lambda < 0.00001)
-          lambda = 0.00001;
+				if( (n1/n2) < stop   ||
+					(cntr >= max_iter) )
+				{
+					goto end;
+				}
 
-        n1 = cv::norm(delta);
-        n2 = cv::norm(parameters);
+			break;
 
-        if ((n1 / n2) < stop || (cntr >= max_iter))
-        {
-          goto end;
-        }
+			case (TUKEY_LM) :
+							
+				cvSetIdentity(diag, cvRealScalar(lambda));
 
-        break;
+				// Tukey weights
+				for(int k = 0; k < W->rows; ++k)
+				{
+					if(weights)													  // If using weight vector
+						if(weights->data.db[k] != -1.0)							     // If true weight given
+							cvmSet(W, k, k, weights->data.db[k]);				          // Use given weight
+						else
+							cvmSet(W, k, k, CalcTukeyWeight(err->data.db[k], 3));     // otherwise use Tukey weight
+					else
+						cvmSet(W, k, k, CalcTukeyWeight(err->data.db[k], 3));	  // Otherwise use Tukey weight
+				}
 
-      case (TUKEY_LM):
+				cvGEMM(J, W, 1, 0, 0, tmp, CV_GEMM_A_T);
+				cvGEMM(tmp, J, 1, 0, 0, JtJ, 0);
+				cvAdd(JtJ, diag, JtJ);
+				cvInv(JtJ, JtJ, CV_SVD);
+				cvGEMM(JtJ, J, 1.0, 0, 0, tmp, CV_GEMM_B_T);
+				cvGEMM(tmp, W, 1, 0, 0, tmp, 0);
+				cvMatMul(tmp, err, delta);
+				cvAdd(delta, parameters, tmp_par);
 
-        cv::setIdentity(diag, cv::Scalar(lambda));
+				Estimate(tmp_par, x_tmp1, estimate_param);
+				cvSub(measurements, x_tmp1, err);
 
-        // Tukey weights
-        for (int k = 0; k < W.rows; ++k)
-        {
-          if (!weights.empty())                 // If using weight vector
-            if (weights.at<double>(k) != -1.0)  // If true weight given
-              W.at<double>(k, k) = weights.at<double>(k);  // Use given weight
-            else
-              W.at<double>(k, k) = CalcTukeyWeight(
-                  err.at<double>(k), 3);  // otherwise use Tukey weight
-          else
-            W.at<double>(k, k) = CalcTukeyWeight(
-                err.at<double>(k), 3);  // Otherwise use Tukey weight
-        }
+				error_new = cvNorm(err, 0, CV_L2);
+				
+				if(error_new < error_old)
+				{
+					cvCopy(tmp_par, parameters);
+					lambda = lambda/10.0;
+				}
+				else
+				{
+					lambda = lambda*10.0;
+				}
+				if(lambda>10) lambda = 10;
+				if(lambda<0.00001) lambda = 0.00001;
 
-        cv::gemm(J, W, 1, 0, 0, tmp, cv::GEMM_1_T);
-        cv::gemm(tmp, J, 1, 0, 0, JtJ, 0);
-        JtJ = JtJ * diag;
-        cv::invert(JtJ, JtJ, cv::DECOMP_SVD);
-        cv::gemm(JtJ, J, 1.0, 0, 0, tmp, cv::GEMM_2_T);
-        cv::gemm(tmp, W, 1, 0, 0, tmp, 0);
-        delta = tmp * err;
-        tmp_par = delta * parameters;
+				n1 = cvNorm(delta);
+				n2 = cvNorm(parameters);
 
-        Estimate(tmp_par, x_tmp1, estimate_param);
-        err = measurements - x_tmp1;
+				if( ((n1/n2) < stop) ||
+					(cntr >= max_iter) )
+				{
+					goto end;
+				}
+	
+			break;
+		}
+		++cntr;
+	}
 
-        error_new = cv::norm(err, cv::NORM_L2);
+end :
 
-        if (error_new < error_old)
-        {
-          tmp_par.copyTo(parameters);
-          lambda = lambda / 10.0;
-        }
-        else
-        {
-          lambda = lambda * 10.0;
-        }
-        if (lambda > 10)
-          lambda = 10;
-        if (lambda < 0.00001)
-          lambda = 0.00001;
-
-        n1 = cv::norm(delta);
-        n2 = cv::norm(parameters);
-
-        if (((n1 / n2) < stop) || (cntr >= max_iter))
-        {
-          goto end;
-        }
-
-        break;
-    }
-    ++cntr;
-  }
-
-end:
-
-  return error_old;
+	return error_old;
 }
 
-}  // namespace alvar
+} // namespace alvar

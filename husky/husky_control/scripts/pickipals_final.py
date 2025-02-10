@@ -48,7 +48,7 @@ ELEVATOR_BUTTON_DESTINATION : dict = {'x' : 41.68 , 'y' : -23.18,'qx' : 0.0 ,'qy
 
 FRONT_ELEVATOR_DESTINATION : dict = {'x' : -8.592 , 'y' : 31.41, 'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.696,'qw' : 0.717} #완
 
-ELEVATOR_DESTINATION : dict = {'x' : -8.54 , 'y' : 33.62,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0,'qw' : 1.0}
+ELEVATOR_DESTINATION : dict = {'x' : -8.54 , 'y' : 33.57,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0,'qw' : 1.0}
 
 ELEVATOR_BUTTON_POSE : dict = {'x' : -8.377 , 'y' : 33.288,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.032,'qw' : 1.0}
 
@@ -64,10 +64,10 @@ class PickAndPlaceRobot(object):
 
         self.tasks = [
             # Task(name="initialize_pose", description="Pose 초기화"),
-            # Task(name="move_to_pickup", description="픽업 장소로 이동"),
-            # Task(name="pickup", description="목표 물건 픽업"),
+            Task(name="move_to_pickup", description="픽업 장소로 이동"),
+            Task(name="pickup", description="목표 물건 픽업"),
             # Task(name="move_to_up_button_place", description="엘리베이터 버튼 장소"),
-            # Task(name="move_to_front_elevator", description="엘리베이터 앞으로 이동"),
+            Task(name="move_to_front_elevator", description="엘리베이터 앞으로 이동"),
             # Task(name="up button click", description="엘리베이터 올라가는 버튼 클릭"),
             Task(name="isdooropen", description="엘리베이터 문 열렸는지 확인"),
             Task(name="move_to_elevator", description="엘리베이터로 이동"),
@@ -77,7 +77,7 @@ class PickAndPlaceRobot(object):
             Task(name="change_map", description="맵 변경"),
             Task(name="initialize_pose_after_map_change", description="맵 변경 후 Pose 초기화"),
             Task(name="isdooropen", description="엘리베이터 문 열렸는지 확인"),
-            # # Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
+            # Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
             Task(name="move_to_deliver", description="배달 장소로 이동"),
             Task(name="knock", description="문 두드리기")  # 마지막 단계
         ]
@@ -235,7 +235,7 @@ class PickAndPlaceRobot(object):
         init_pose.publish(init_msg)   
      
     def re_initialize_pose(self,ep):
-        
+
         print("adjust_pose!")
         init_pose= rospy.Publisher("initialpose", PoseWithCovarianceStamped, queue_size=10)
         init_msg = PoseWithCovarianceStamped()
@@ -256,8 +256,11 @@ class PickAndPlaceRobot(object):
             init_pose.publish(init_msg)
             rospy.sleep(0.1)
 
-        subprocess.Popen(['rosservice', 'call', '/move_base/clear_costmaps'])
-        time.sleep(5)
+        time.sleep(10) 
+        self.clear_costmap()
+        # time.sleep(2)
+        # subprocess.Popen(['rosservice', 'call', '/move_base/clear_costmaps'])
+        # time.sleep(5)
 
     def poweroff(self):
 

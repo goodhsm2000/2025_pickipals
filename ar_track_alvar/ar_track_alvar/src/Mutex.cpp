@@ -25,25 +25,26 @@
 
 #include "ar_track_alvar/Mutex_private.h"
 
-namespace alvar
-{
-Mutex::Mutex() : d(new MutexPrivate())
+namespace alvar {
+
+Mutex::Mutex()
+    : d(new MutexPrivate())
 {
 }
 
 Mutex::~Mutex()
 {
-  delete d;
+    delete d;
 }
 
 void Mutex::lock()
 {
-  return d->lock();
+    return d->lock();
 }
 
 void Mutex::unlock()
 {
-  return d->unlock();
+    return d->unlock();
 }
 
-}  // namespace alvar
+} // namespace alvar
