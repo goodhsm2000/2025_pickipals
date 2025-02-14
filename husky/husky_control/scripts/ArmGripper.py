@@ -369,14 +369,14 @@ def press_number(x, y, z):
 
     # (2) 2cm 전진
     press_pose = Pose()
-    press_pose.position.x = current_pose.position.x + 0.02
+    press_pose.position.x = current_pose.position.x + 0.01
     press_pose.position.y = current_pose.position.y
     press_pose.position.z = current_pose.position.z
     press_pose.orientation = current_pose.orientation
     waypoints.append(press_pose)
 
     # (3) 원위치로 복귀
-    waypoints.append(current_pose)
+    # waypoints.append(current_pose)
 
     success = execute_cartesian_path_with_retry(waypoints, eef_step=0.002, jump_threshold=0.0, max_retries=3)
     if not success:
@@ -563,7 +563,7 @@ class ArmGripper(object):
                 # 모드에 따라 동작 시도
                 if mode == "pickup":
                     # pickup 모드
-                    is_success = grasp_object(x_o + 0.01, y_o - 0.04, z_o)
+                    is_success = grasp_object(x_o + 0.02, y_o - 0.04, z_o)
                 else:
                     # elevator 모드
                     is_success = press_number(x_o + 0.015, y_o + 0.03, z_o - 0.015)

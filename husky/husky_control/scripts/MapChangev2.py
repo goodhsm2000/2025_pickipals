@@ -13,7 +13,7 @@ class MapChangev2(object):
         
         # 맵 파일 경로
         self.maps = {
-            "2": "/home/husky/catkin_ws/src/husky/husky_navigation/maps/electric2.yaml",
+            "2": "/home/husky/catkin_ws/src/husky/husky_navigation/maps/electric2_path.yaml",
             "3": "/home/husky/catkin_ws/src/husky/husky_navigation/maps/electric3.yaml",
             "4": "/home/husky/catkin_ws/src/husky/husky_navigation/maps/electric4.yaml",
             "5": "/home/husky/catkin_ws/src/husky/husky_navigation/maps/electric5_path.yaml"

@@ -14,9 +14,8 @@ from std_msgs.msg import String
 
 import numpy as np
 from collections import deque
-# import tf
-import subprocess
 import time
+import random
 
 from geometry_msgs.msg import PoseStamped
 from std_srvs.srv import Empty
@@ -37,6 +36,8 @@ class Task:
     name: str
     is_completed: bool = False
     description: str = ""
+    retry_count: int = 0
+    time_taken: float = 0.0  # ★ 각 태스크에서 소요된 시간을 누적할 필드
 
 # -------------------------
 # 미리 정의된 위치/포즈
@@ -49,16 +50,15 @@ FRONT_ELEVATOR_DESTINATION : dict = {'x' : -8.592 , 'y' : 31.41, 'qx' : 0.0 ,'qy
 ELEVATOR_DESTINATION : dict = {'x' : -8.54 , 'y' : 33.57,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0,'qw' : 1.0}
 ELEVATOR_BUTTON_POSE : dict = {'x' : -8.377 , 'y' : 33.288,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.032,'qw' : 1.0}
 HEADING_POSE : dict = {'x' : -8.54 , 'y' : 33.62,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.641,'qw' : 0.767}
-DELIVER_DESTINATION : dict = {'x' : 35.347 , 'y' : 13.657,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.660,'qw' : 0.750}
+# DELIVER_DESTINATION : dict = {'x' : 35.347 , 'y' : 13.657,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : -0.660,'qw' : 0.750}
+DELIVER_DESTINATION : dict = {'x' : 24.053 , 'y' : 10.938,'qx' : 0.0 ,'qy' : 0.0 ,'qz' : 0.698,'qw' : 0.715}
 
 class PickAndPlaceRobot(object):
 
     def __init__(self, hz = 100):
-        
         self.rate = rospy.Rate(hz)
 
         self.tasks = [
-            # Task(name="initialize_pose", description="Pose 초기화"),
             Task(name="move_to_pickup", description="픽업 장소로 이동"),
             Task(name="pickup", description="목표 물건 픽업"),
             Task(name="move_to_front_elevator", description="엘리베이터 앞으로 이동"),
@@ -69,7 +69,7 @@ class PickAndPlaceRobot(object):
             Task(name="change_map", description="맵 변경"),
             Task(name="initialize_pose_after_map_change", description="맵 변경 후 Pose 초기화"),
             Task(name="isdooropen", description="엘리베이터 문 열렸는지 확인"),
-            # Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
+            Task(name="istargetfloor", description="목표 층수가 맞는지 확인"),
             Task(name="move_to_deliver", description="배달 장소로 이동"),
             Task(name="knock", description="문 두드리기")  # 마지막 단계
         ]
@@ -86,7 +86,6 @@ class PickAndPlaceRobot(object):
         self.map_changev2 = MapChangev2()
         self.isdooropen = IsDoorOpen()
         self.armgripper = ArmGripper()
-        # self.istargetfloor = IsTargetFloor()  # 필요 시 사용
 
         self.START = False
         self.floor_num = 0
@@ -245,7 +244,7 @@ class PickAndPlaceRobot(object):
             init_pose.publish(init_msg)
             rospy.sleep(0.1)
 
-        time.sleep(10) 
+        time.sleep(15) 
         self.clear_costmap()
 
     def clear_costmap(self):
@@ -278,6 +277,7 @@ class PickAndPlaceRobot(object):
 
         if self.cur_task_level == len(self.tasks):
             print("All tasks are done.")
+            self.print_summary()
             self.window.destroy()
             return
 
@@ -286,9 +286,9 @@ class PickAndPlaceRobot(object):
             task_name = current_task.name
 
             # --- 미션 시작 표시 (아직 수행 안 했으면)
-            # 이미 '시작' 찍었는지 여부 등을 확인하지 않고, 간단히 찍도록
             self.update_mission_status(task_name, "시작")
 
+            start_time = time.time()
             is_completed = False
 
             # ==== task별 로직 수행 ====
@@ -318,9 +318,13 @@ class PickAndPlaceRobot(object):
                 is_completed = self.map_changev2(self.floor_num)
 
             elif task_name == "initialize_pose_after_map_change":
-                # re_initialize_pose()는 반환값이 없지만,
-                # 성공했다고 가정
                 self.re_initialize_pose(MAP_CHANGE_POSE)
+                is_completed = True
+            
+            elif task_name == "istargetfloor":
+                # 단순 테스트용(실제 로직 대체)
+                sleep_time = random.uniform(0.2, 1.0)  # 0.2초에서 1.0초 사이의 랜덤 값
+                time.sleep(sleep_time)
                 is_completed = True
 
             elif task_name == "move_to_deliver":
@@ -335,13 +339,26 @@ class PickAndPlaceRobot(object):
                 is_completed = True
 
             # ===== 미션 결과 처리 =====
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            # ★ 시간을 누적해서 더해주는 부분 (성공/실패 상관없이 시도 시간 기록)
+            current_task.time_taken += elapsed_time
+
             if is_completed:
                 self.update_mission_status(task_name, "성공")
                 self.cur_task_level += 1
             else:
                 self.update_mission_status(task_name, "실패")
-                # 실패 시 현재 코드 구조상, 다음 단계로는 넘어가지 않고
-                # 계속 이 미션을 재시도 하게 됨
+                current_task.retry_count += 1
+                # 실패 시 cur_task_level을 증가시키지 않음 → 다음 주기 때 재시도
+
+    def print_summary(self):
+        total_time = 0
+        for task in self.tasks:
+            total_time += task.time_taken
+            print(f"Task '{task.name}': {task.time_taken:.4f} seconds, Retries: {task.retry_count}")
+        print(f"\nTotal time taken for all tasks: {total_time:.4f} seconds")
 
     def start_gui(self):
         """

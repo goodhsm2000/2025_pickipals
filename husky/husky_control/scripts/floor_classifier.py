@@ -103,7 +103,7 @@ class FloorClassifier:
 if __name__ == "__main__":
     try:
         # SavedModel 디렉터리 (saved_model.pb가 있는 곳)
-        MODEL_DIR = "/home/husky/catkin_ws/src/husky/husky_control/weights/efficientnet_b0_simple_model_3"
+        MODEL_DIR = "/home/husky/catkin_ws/src/husky/husky_control/weights/efficientnet_b0_simple_model_4"
         
         # 이미지 토픽(예시)
         IMAGE_TOPIC = "/camera/color/image_raw"
